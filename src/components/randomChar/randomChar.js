@@ -1,6 +1,8 @@
 import React, {Component} from 'react';
 import GotService from '../../services/gotService';
 import './randomChar.css';
+import Spinner from '../spinner';
+import ErrorMessage from '../errorMessage';
 
 export default class RandomChar extends Component {
     constructor(){
@@ -9,34 +11,54 @@ export default class RandomChar extends Component {
     }
     gotService = new GotService();
     state = {
-        name: null,
-        gender: null,
-        born: null,
-        died: null,
-        culture: null
-    };
+        char: {},
+        loading: true,
+        error: false
+    }
+
+    onCharLoaded = (char) => {
+        this.setState({
+            char,
+            loading: false
+        });
+    }
+
+    onError = (err) => {
+        this.setState({
+            error: true,
+            loading: false
+        })
+    }
 
     updateChar() {
-        const id = Math.floor(Math.random()*150 + 25);
+        // const id = Math.floor(Math.random()*150 + 25); //25 - 150
+        const id = 140000000;
         this.gotService.getCharacter(id)
-            .then(char => {
-                this.setState({
-                    name: char.name,
-                    gender: char.gender,
-                    born: char.born,
-                    died: char.died,
-                    culture: char.culture 
-                })
-            })
+            .then(this.onCharLoaded)
+            .catch(this.onError);
     }
 
     render() {
+        const { char, loading, error } = this.state;
 
-        const {name, gender, born, died, culture} = this.state;
-
+        const errorMessage = error ? <ErrorMessage/> : null
+        const spinner = loading ? <Spinner/> : null;
+        const content = (!loading || error) ? <View char={char}/> : null;
         return (
             <div className="random-block rounded">
-                <h4>Random Character: {name}</h4>
+                {errorMessage}
+                {spinner}
+                {content}
+            </div>
+        );
+    }
+}
+
+const View = ({char}) => {
+    const {name, gender, born, died, culture} = char
+    return(
+        <>
+            <h4>Random Character: {name}</h4>
                 <ul className="list-group list-group-flush">
                     <li className="list-group-item d-flex justify-content-between">
                         <span className="term">Gender </span>
@@ -55,7 +77,6 @@ export default class RandomChar extends Component {
                         <span>{culture}</span>
                     </li>
                 </ul>
-            </div>
-        );
-    }
+        </>
+    )
 }
